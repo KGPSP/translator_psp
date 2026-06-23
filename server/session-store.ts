@@ -10,6 +10,7 @@ import { translateText } from "./translator";
 import type { ProcessingStep, Segment, SessionFile, SessionState } from "./types";
 
 type Broadcast = (event: unknown) => void;
+type TranslationFunction = typeof translateText;
 
 const languageLabels = Object.fromEntries(languages.map((language) => [language.code, language])) as Record<
   LanguageCode,
@@ -23,7 +24,10 @@ export class SessionStore {
   private queue: string[] = [];
   private active = false;
 
-  constructor(private readonly broadcast: Broadcast) {
+  constructor(
+    private readonly broadcast: Broadcast,
+    private readonly translatePageText: TranslationFunction = translateText
+  ) {
     this.session = this.createSession("pl", "en");
   }
 
@@ -384,7 +388,7 @@ export class SessionStore {
     this.broadcast({ type: "segment", segment, session: this.session });
 
     const started = performance.now();
-    const translated = await translateText(segment.originalText, segment.detectedLanguage, target);
+    const translated = await this.translatePageText(segment.originalText, segment.detectedLanguage, target);
     segment.timings.translate = Math.round(performance.now() - started);
     segment.translatedText = translated;
     segment.translations[target] = translated;
@@ -455,7 +459,9 @@ export class SessionStore {
       path.join(this.session.dir, "original.md"),
       renderOriginalMarkdown(this.session.id, this.session.createdAt, this.session.segments, languageLabels)
     );
-    for (const language of [this.session.languageA, this.session.languageB]) {
+    const translationPageLanguages = this.translationPageLanguages();
+    await this.backfillTranslationPages(translationPageLanguages);
+    for (const language of translationPageLanguages) {
       await this.atomicWrite(
         path.join(this.session.dir, `translated.${language}.md`),
         renderTranslatedMarkdown(this.session.id, this.session.createdAt, language, this.session.segments, languageLabels)
@@ -539,6 +545,57 @@ export class SessionStore {
     this.session.files = await this.listFiles().catch(() => this.session.files);
   }
 
+  private translationPageLanguages() {
+    const codes = new Set<LanguageCode>();
+    const add = (code: string | undefined) => {
+      if (code && getLanguage(code)) {
+        codes.add(code as LanguageCode);
+      }
+    };
+
+    add(this.session.languageA);
+    add(this.session.languageB);
+    for (const segment of this.session.segments) {
+      add(segment.languageA);
+      add(segment.languageB);
+      add(segment.detectedLanguage);
+      add(segment.targetLanguage);
+      for (const code of Object.keys(segment.translations)) {
+        add(code);
+      }
+    }
+
+    return [...codes];
+  }
+
+  private async backfillTranslationPages(targetLanguages: LanguageCode[]) {
+    const pageSegments = this.session.segments.filter((item) => item.status === "done" || item.status === "writing");
+    for (const segment of pageSegments) {
+      if (!segment.originalText || !segment.detectedLanguage) {
+        continue;
+      }
+
+      if (!lineHasText(segment.translations[segment.detectedLanguage])) {
+        segment.translations[segment.detectedLanguage] = segment.originalText;
+      }
+
+      for (const targetLanguage of targetLanguages) {
+        if (lineHasText(segment.translations[targetLanguage])) {
+          continue;
+        }
+        if (targetLanguage === segment.detectedLanguage) {
+          segment.translations[targetLanguage] = segment.originalText;
+          continue;
+        }
+        segment.translations[targetLanguage] = await this.translatePageText(
+          segment.originalText,
+          segment.detectedLanguage,
+          targetLanguage
+        );
+      }
+    }
+  }
+
   private async atomicWrite(filePath: string, content: string) {
     const tmpPath = `${filePath}.${crypto.randomUUID()}.tmp`;
     await writeFile(tmpPath, content, "utf8");
@@ -557,6 +614,10 @@ function isAllowedAudio(mimeType: string) {
     mimeType === "video/webm" ||
     mimeType === "application/octet-stream"
   );
+}
+
+function lineHasText(text: string | undefined) {
+  return Boolean(text?.trim());
 }
 
 function isSessionFileName(name: string) {
