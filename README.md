@@ -20,6 +20,20 @@ zrozumiec, uruchomic albo odtworzyc prototyp w innym srodowisku.
 Bezposredni link:
 [paper-prototyp-tlumacza-lokalnego.md](docs/paper-prototyp-tlumacza-lokalnego.md)
 
+## Screenshoty i mockupy
+
+Prawdziwe zrzuty ekranu aplikacji:
+
+| Laptop | Tablet |
+| --- | --- |
+| ![Screenshot laptop](docs/assets/translator-local-laptop.png) | ![Screenshot tablet](docs/assets/translator-local-tablet.png) |
+
+Wizualizacje systemu dzialajacego na urzadzeniach:
+
+| Mockup z realnym UI | Mockup produktowy |
+| --- | --- |
+| ![Mockup laptop i tablet](docs/assets/translator-device-mockup.png) | ![Wygenerowany mockup laptop i tablet](docs/assets/translator-generated-laptop-tablet-mockup.png) |
+
 ## Uruchomienie
 
 ```bash

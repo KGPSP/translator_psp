@@ -2,5 +2,6 @@ node_modules
 dist
 sessions
 .playwright-cli/
+.playwright-mcp/
 .DS_Store
 *.log
