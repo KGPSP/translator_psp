@@ -4,7 +4,21 @@ Lokalny prototyp tlumacza rozmowy: Bun backend, React/Vite UI, `mlx-whisper` dla
 
 ## Dokumentacja paper
 
-Pelny opis architektury, pipeline'u, modeli, instalacji na Macu, wdrozenia lokalnego i zrodel znajduje sie w [docs/paper-prototyp-tlumacza-lokalnego.md](docs/paper-prototyp-tlumacza-lokalnego.md).
+Najpierw przeczytaj paper projektu. To glowny dokument dla osob, ktore chca
+zrozumiec, uruchomic albo odtworzyc prototyp w innym srodowisku.
+
+```text
++--------------------------------------------------------------+
+| PAPER / GUIDE                                                |
+|                                                              |
+|  Architektura -> Pipeline -> Modele -> Wdrozenie             |
+|                                                              |
+|  docs/paper-prototyp-tlumacza-lokalnego.md                   |
++--------------------------------------------------------------+
+```
+
+Bezposredni link:
+[paper-prototyp-tlumacza-lokalnego.md](docs/paper-prototyp-tlumacza-lokalnego.md)
 
 ## Uruchomienie
 
